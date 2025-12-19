@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Village Commodity Sharing</title>
+    <style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f3f6;
+    margin: 0;
+}
+
+header {
+    background: #2e7d32;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 15px;
+}
+
+.form-box {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.form-box h2 {
+    margin-top: 0;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+button {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#submitBtn {
+    background: #2e7d32;
+    color: white;
+    width: 100%;
+}
+
+#filter {
+    margin-bottom: 15px;
+    padding: 10px;
+    width: 100%;
+    border-radius: 5px;
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+    margin: 0 0 5px 0;
+}
+
+.card strong {
+    color: #2e7d32;
+}
+
+.card button {
+    margin-top: 10px;
+}
+
+.card a button {
+    background: #25D366;
+    color: white;
+}
+
+.card .edit-btn {
+    background: orange;
+    margin-left: 5px;
+}
+
+.card .delete-btn {
+    background: red;
+    margin-left: 5px;
+}
+
+/* Mobile friendly */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 20px;
+    }
+}
+</style>
+
+</head>
+<body>
+
+<header>
+    <h1>Village Commodity Sharing</h1>
+    <p>Share and Find Commodities Easily</p>
+</header>
+
+<div class="container">
+
+    <!-- POST FORM -->
+    <div class="form-box">
+        <h2>Post a Commodity</h2>
+        <input type="text" id="title" placeholder="Commodity Name">
+
+    <select id="category">
+        <option value="">Select Category</option>
+        <option value="Food">Food</option>
+        <option value="Tools">Tools</option>
+        <option value="Services">Services</option>
+    </select>
+
+    <textarea id="desc" placeholder="Description"></textarea>
+    <input type="text" id="phone" placeholder="Phone Number (WhatsApp)">
+
+        <button onclick="addCommodity()" id="submitBtn">Post Commodity</button>
+    </div>
+
+    <!-- COMMODITY LIST -->
+    <select id="filter" onchange="filterCategory()">
+    <option value="All">All Categories</option>
+    <option value="Food">Food</option>
+    <option value="Tools">Tools</option>
+    <option value="Services">Services</option>
+</select>
+
+<div id="list">
+
+        <div class="card">
+            <h3>Rice - 10kg</h3>
+            <p>Available in North Village</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+let commodities = JSON.parse(localStorage.getItem("commodities")) || [];
+let editId = null;
+
+// Load data
+window.onload = function () {
+    renderList(commodities);
+};
+
+function addCommodity() {
+    var title = document.getElementById("title").value;
+    var desc = document.getElementById("desc").value;
+    var phone = document.getElementById("phone").value;
+    var category = document.getElementById("category").value;
+
+    if (title === "" || desc === "" || phone === "" || category === "") {
+        alert("Please fill all fields");
+        return;
+    }
+
+    // UPDATE MODE
+    if (editId !== null) {
+        commodities = commodities.map(item =>
+            item.id === editId
+                ? { ...item, title, desc, phone, category }
+                : item
+        );
+        editId = null;
+        document.getElementById("submitBtn").innerText = "Post Commodity";
+    }
+    // ADD MODE
+    else {
+        commodities.push({
+            id: Date.now(),
+            title,
+            desc,
+            phone,
+            category
+        });
+    }
+
+    localStorage.setItem("commodities", JSON.stringify(commodities));
+    renderList(commodities);
+    clearForm();
+}
+
+function editCommodity(id) {
+    var item = commodities.find(c => c.id === id);
+
+    document.getElementById("title").value = item.title;
+    document.getElementById("desc").value = item.desc;
+    document.getElementById("phone").value = item.phone;
+    document.getElementById("category").value = item.category;
+
+    editId = id;
+    document.getElementById("submitBtn").innerText = "Update Commodity";
+}
+
+function deleteCommodity(id) {
+    if (!confirm("Delete this post?")) return;
+
+    commodities = commodities.filter(item => item.id !== id);
+    localStorage.setItem("commodities", JSON.stringify(commodities));
+    renderList(commodities);
+}
+
+function renderList(items) {
+    var list = document.getElementById("list");
+    list.innerHTML = "";
+
+    items.forEach(item => {
+        var card = document.createElement("div");
+        card.className = "card";
+
+        var whatsappLink = "https://wa.me/91" + item.phone;
+
+        card.innerHTML = `
+            <h3>${item.title}</h3>
+            <strong>${item.category}</strong>
+            <p>${item.desc}</p>
+
+            <a href="${whatsappLink}" target="_blank">
+                <button>WhatsApp</button>
+            </a>
+
+            <button class="edit-btn" onclick="editCommodity(${item.id})">Edit</button>
+<button class="delete-btn" onclick="deleteCommodity(${item.id})">Delete</button>
+
+        `;
+
+        list.appendChild(card);
+    });
+}
+
+function filterCategory() {
+    var selected = document.getElementById("filter").value;
+
+    if (selected === "All") {
+        renderList(commodities);
+    } else {
+        renderList(commodities.filter(i => i.category === selected));
+    }
+}
+
+function clearForm() {
+    document.getElementById("title").value = "";
+    document.getElementById("desc").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("category").value = "";
+}
+</script>
+
+
+
+
+</body>
+</html>
